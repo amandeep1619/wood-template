@@ -1,0 +1,35 @@
+[
+  {
+    "id": "bcat_1",
+    "uuid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "slug": "wood-care-maintenance",
+    "name": "Wood Care & Maintenance",
+    "description": "Tips and guides for keeping your wood furniture and cabinetry in perfect condition",
+    "status": "active",
+    "isDeleted": false,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "bcat_2",
+    "uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "slug": "design-inspiration",
+    "name": "Design Inspiration",
+    "description": "Trends, ideas, and case studies from the world of custom woodwork and interior design",
+    "status": "active",
+    "isDeleted": false,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "bcat_3",
+    "uuid": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "slug": "craft-and-process",
+    "name": "Craft & Process",
+    "description": "Behind the scenes in our workshop — techniques, materials, and how we work",
+    "status": "active",
+    "isDeleted": false,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+]

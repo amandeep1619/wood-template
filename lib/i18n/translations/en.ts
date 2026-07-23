@@ -1,0 +1,88 @@
+const en = {
+  nav: {
+    home: "Home",
+    services: "Services",
+    projects: "Projects",
+    about: "About",
+    blog: "Blog",
+    contact: "Contact",
+    freeQuote: "Free Quote",
+  },
+  hero: {
+    badge: "Master Craftsmen Since 1998 · Award-Winning Woodwork",
+    headline1: "Where Wood",
+    headline2: "Becomes",
+    headline3: "Heirloom.",
+    subheadline:
+      "We craft bespoke furniture, kitchen cabinetry, and architectural woodwork that outlasts generations. Every joint is cut by hand. Every finish is applied with intention.",
+    ctaPrimary: "Start Your Project",
+    ctaSecondary: "View Our Work",
+    scroll: "Scroll",
+    statsProjects: "Projects Completed",
+    statsYears: "Years Experience",
+    statsSatisfaction: "Client Satisfaction",
+    statsAwards: "Industry Awards",
+    yearsLabel: "Years",
+  },
+  sections: {
+    ourWork: "Our Work",
+    craftInAction: "Craftsmanship in Action",
+    allProjects: "All Projects",
+    viewAll: "View All Projects",
+    ourServices: "Our Services",
+    byTheNumbers: "By The Numbers",
+    legacyInWood: "A Legacy Built in Wood",
+    howItWorks: "How It Works",
+    projectJourney: "Your Project Journey",
+    clientStories: "Client Stories",
+    whatClientsSay: "What Our Clients Say",
+    faqTitle: "Questions & Answers",
+    whyChooseUs: "Why Artisan Wood Co.",
+    theDetails: "The Difference Is in the Details",
+  },
+  common: {
+    readMore: "Read More",
+    readArticle: "Read Article",
+    learnMore: "Learn More",
+    getQuote: "Get a Free Quote",
+    viewProject: "View Project",
+    allArticles: "All Articles",
+    startProject: "Start Your Project",
+    freeConsultation: "Free Consultation",
+    sendMessage: "Send Message",
+    loading: "Loading...",
+    noResults: "No results found",
+  },
+  footer: {
+    tagline:
+      "Master woodworkers crafting heirloom-quality custom furniture, cabinetry, and architectural millwork since 1998.",
+    services: "Services",
+    company: "Company",
+    getInTouch: "Get in Touch",
+    workshopHours: "Workshop Hours",
+    monFri: "Mon – Fri: 8:00am – 6:00pm",
+    sat: "Saturday: 9:00am – 3:00pm",
+    sun: "Sunday: Closed",
+    copyright: "All rights reserved.",
+    privacy: "Privacy Policy",
+    terms: "Terms of Service",
+    sitemap: "Sitemap",
+  },
+  cta: {
+    defaultHeadline: "Ready to Start Your Project?",
+    defaultSubheadline:
+      "Every great piece starts with a conversation. Get in touch for a free consultation.",
+    primaryLabel: "Book a Consultation",
+    secondaryLabel: "View Our Work",
+  },
+  cookie: {
+    message:
+      "We use cookies to remember your language preference and improve your experience.",
+    accept: "Accept",
+    decline: "Decline",
+    learnMore: "Learn more",
+  },
+};
+
+export default en;
+export type TranslationKeys = typeof en;
