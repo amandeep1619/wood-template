@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Pagination from "@/components/admin/Pagination";
 
 type Item = Record<string, unknown>;
 
@@ -18,6 +19,8 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const PER_PAGE_DEFAULT = 10;
+
 export default function ProjectsListPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Item[]>([]);
@@ -26,6 +29,8 @@ export default function ProjectsListPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [catFilter, setCatFilter] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(PER_PAGE_DEFAULT);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -44,6 +49,9 @@ export default function ProjectsListPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setPage(1); }, [search, statusFilter, catFilter]);
+
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     setDeleting(id);
@@ -56,6 +64,9 @@ export default function ProjectsListPage() {
     const cat = categories.find((c) => c.id === id);
     return cat ? String(cat.name) : id;
   };
+
+  const pagedItems = items.slice((page - 1) * perPage, page * perPage);
+  const colSpan = 6;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -128,11 +139,11 @@ export default function ProjectsListPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading…</td></tr>
-              ) : items.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-gray-400">No projects found</td></tr>
+                <tr><td colSpan={colSpan} className="text-center py-12 text-gray-400">Loading…</td></tr>
+              ) : pagedItems.length === 0 ? (
+                <tr><td colSpan={colSpan} className="text-center py-12 text-gray-400">No projects found</td></tr>
               ) : (
-                items.map((item) => (
+                pagedItems.map((item) => (
                   <tr key={String(item.id)} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-3">
                       <p className="font-medium text-gray-900">{String(item.title)}</p>
@@ -166,6 +177,16 @@ export default function ProjectsListPage() {
             </tbody>
           </table>
         </div>
+
+        {!loading && items.length > 0 && (
+          <Pagination
+            total={items.length}
+            page={page}
+            perPage={perPage}
+            onChange={setPage}
+            onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
+          />
+        )}
       </div>
     </div>
   );

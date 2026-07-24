@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Pagination from "@/components/admin/Pagination";
 
 type Item = Record<string, unknown>;
 
@@ -18,6 +19,8 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const PER_PAGE_DEFAULT = 10;
+
 export default function BlogsListPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Item[]>([]);
@@ -26,6 +29,8 @@ export default function BlogsListPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [catFilter, setCatFilter] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(PER_PAGE_DEFAULT);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -44,6 +49,9 @@ export default function BlogsListPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setPage(1); }, [search, statusFilter, catFilter]);
+
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
     setDeleting(id);
@@ -59,9 +67,15 @@ export default function BlogsListPage() {
 
   const formatDate = (d: unknown) => {
     if (!d) return "—";
-    try { return new Date(String(d)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
-    catch { return String(d); }
+    try {
+      return new Date(String(d)).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    } catch {
+      return String(d);
+    }
   };
+
+  const pagedItems = items.slice((page - 1) * perPage, page * perPage);
+  const colSpan = 6;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -83,17 +97,33 @@ export default function BlogsListPage() {
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
-          <input type="text" placeholder="Search posts…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" />
+          <input
+            type="text"
+            placeholder="Search posts…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          />
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-amber-500 focus:outline-none">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-amber-500 focus:outline-none"
+        >
           <option value="">All statuses</option>
           <option value="published">Published</option>
           <option value="draft">Draft</option>
           <option value="archived">Archived</option>
         </select>
-        <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-amber-500 focus:outline-none">
+        <select
+          value={catFilter}
+          onChange={(e) => setCatFilter(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-amber-500 focus:outline-none"
+        >
           <option value="">All categories</option>
-          {categories.map((c) => <option key={String(c.id)} value={String(c.id)}>{String(c.name)}</option>)}
+          {categories.map((c) => (
+            <option key={String(c.id)} value={String(c.id)}>{String(c.name)}</option>
+          ))}
         </select>
       </div>
 
@@ -112,11 +142,11 @@ export default function BlogsListPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading…</td></tr>
-              ) : items.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-gray-400">No posts found</td></tr>
+                <tr><td colSpan={colSpan} className="text-center py-12 text-gray-400">Loading…</td></tr>
+              ) : pagedItems.length === 0 ? (
+                <tr><td colSpan={colSpan} className="text-center py-12 text-gray-400">No posts found</td></tr>
               ) : (
-                items.map((item) => (
+                pagedItems.map((item) => (
                   <tr key={String(item.id)} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-3">
                       <p className="font-medium text-gray-900">{String(item.title)}</p>
@@ -129,7 +159,11 @@ export default function BlogsListPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-3">
                         <Link href={`/admin/blogs/${item.id}/edit`} className="text-sm text-amber-600 hover:text-amber-700 font-medium">Edit</Link>
-                        <button onClick={() => handleDelete(String(item.id), String(item.title))} disabled={deleting === String(item.id)} className="text-sm text-red-500 hover:text-red-600 font-medium disabled:opacity-40">
+                        <button
+                          onClick={() => handleDelete(String(item.id), String(item.title))}
+                          disabled={deleting === String(item.id)}
+                          className="text-sm text-red-500 hover:text-red-600 font-medium disabled:opacity-40"
+                        >
                           {deleting === String(item.id) ? "…" : "Delete"}
                         </button>
                       </div>
@@ -140,6 +174,16 @@ export default function BlogsListPage() {
             </tbody>
           </table>
         </div>
+
+        {!loading && items.length > 0 && (
+          <Pagination
+            total={items.length}
+            page={page}
+            perPage={perPage}
+            onChange={setPage}
+            onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
+          />
+        )}
       </div>
     </div>
   );

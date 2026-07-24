@@ -73,5 +73,20 @@
     "isDeleted": false,
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "title": "examle",
+    "slug": "examle",
+    "shortDescription": "adsfas",
+    "description": "safasf",
+    "icon": "",
+    "image": "",
+    "featured": false,
+    "status": "active",
+    "id": "svc_cb61413a",
+    "uuid": "70768699-49b0-4366-93d1-d0e98442cf1e",
+    "isDeleted": true,
+    "createdAt": "2026-07-24T06:21:53.726Z",
+    "updatedAt": "2026-07-24T06:22:00.363Z"
   }
 ]

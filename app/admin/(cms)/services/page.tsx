@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Pagination from "@/components/admin/Pagination";
 
 type Item = Record<string, unknown>;
 
@@ -17,11 +18,15 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const PER_PAGE_DEFAULT = 10;
+
 export default function ServicesListPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(PER_PAGE_DEFAULT);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -34,6 +39,9 @@ export default function ServicesListPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Reset to page 1 whenever search changes
+  useEffect(() => { setPage(1); }, [search]);
+
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     setDeleting(id);
@@ -41,6 +49,9 @@ export default function ServicesListPage() {
     setDeleting(null);
     fetchData();
   };
+
+  const pagedItems = items.slice((page - 1) * perPage, page * perPage);
+  const colSpan = 5;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -62,7 +73,13 @@ export default function ServicesListPage() {
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
-          <input type="text" placeholder="Search services…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" />
+          <input
+            type="text"
+            placeholder="Search services…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          />
         </div>
       </div>
 
@@ -80,11 +97,11 @@ export default function ServicesListPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-400">Loading…</td></tr>
-              ) : items.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-400">No services found</td></tr>
+                <tr><td colSpan={colSpan} className="text-center py-12 text-gray-400">Loading…</td></tr>
+              ) : pagedItems.length === 0 ? (
+                <tr><td colSpan={colSpan} className="text-center py-12 text-gray-400">No services found</td></tr>
               ) : (
-                items.map((item) => (
+                pagedItems.map((item) => (
                   <tr key={String(item.id)} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
@@ -103,7 +120,11 @@ export default function ServicesListPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-3">
                         <Link href={`/admin/services/${item.id}/edit`} className="text-sm text-amber-600 hover:text-amber-700 font-medium">Edit</Link>
-                        <button onClick={() => handleDelete(String(item.id), String(item.title))} disabled={deleting === String(item.id)} className="text-sm text-red-500 hover:text-red-600 font-medium disabled:opacity-40">
+                        <button
+                          onClick={() => handleDelete(String(item.id), String(item.title))}
+                          disabled={deleting === String(item.id)}
+                          className="text-sm text-red-500 hover:text-red-600 font-medium disabled:opacity-40"
+                        >
                           {deleting === String(item.id) ? "…" : "Delete"}
                         </button>
                       </div>
@@ -114,6 +135,16 @@ export default function ServicesListPage() {
             </tbody>
           </table>
         </div>
+
+        {!loading && items.length > 0 && (
+          <Pagination
+            total={items.length}
+            page={page}
+            perPage={perPage}
+            onChange={setPage}
+            onPerPageChange={(n) => { setPerPage(n); setPage(1); }}
+          />
+        )}
       </div>
     </div>
   );
