@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+
+async function fetchCsrfToken(): Promise<string> {
+  const res = await fetch("/api/csrf");
+  const { token } = await res.json();
+  return token;
+}
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -26,6 +32,7 @@ const budgets = [
 
 export default function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
+  const [csrfToken, setCsrfToken] = useState("");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -34,6 +41,10 @@ export default function ContactForm() {
     budget: "",
     message: "",
   });
+
+  useEffect(() => {
+    fetchCsrfToken().then(setCsrfToken).catch(() => {});
+  }, []);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -44,8 +55,18 @@ export default function ContactForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("loading");
-    await new Promise((r) => setTimeout(r, 1500));
-    setStatus("success");
+    try {
+      const token = csrfToken || (await fetchCsrfToken());
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("Submit failed");
+      setStatus("success");
+    } catch {
+      setStatus("error");
+    }
   }
 
   if (status === "success") {

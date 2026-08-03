@@ -31,9 +31,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogPage() {
-  const blogPosts = getBlogPosts();
-  const featured = getFeaturedBlogPosts();
+export default async function BlogPage() {
+  const [blogPosts, featured] = await Promise.all([getBlogPosts(), getFeaturedBlogPosts()]);
   const rest = blogPosts.filter((p) => !p.featured);
 
   return (

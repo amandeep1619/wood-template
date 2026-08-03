@@ -1,33 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
-import { readCollection, writeCollection, now } from "@/lib/api/mockDb";
+import { NextRequest } from "next/server";
+import { getBlogPost, softDeleteBlogPost, updateBlogPost } from "@/lib/api/blogPostsService";
+import { blogPostInputSchema } from "@/lib/api/schemas";
+import { noContent, notFound, ok, withErrorHandling } from "@/lib/api/http";
 
-const COL = "blogs";
+type RouteParams = { params: Promise<{ id: string }> };
 
-export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withErrorHandling(async (_req: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
-  const items = readCollection<Record<string, unknown>>(COL);
-  const item = items.find((b) => b.id === id && !b.isDeleted);
-  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ data: item });
-}
+  const item = await getBlogPost(id);
+  if (!item) return notFound("Blog post");
+  return ok(item);
+});
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withErrorHandling(async (req: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
-  const body = await req.json();
-  const items = readCollection<Record<string, unknown>>(COL);
-  const idx = items.findIndex((b) => b.id === id && !b.isDeleted);
-  if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  items[idx] = { ...items[idx], ...body, id, updatedAt: now() };
-  writeCollection(COL, items);
-  return NextResponse.json({ data: items[idx] });
-}
+  const input = blogPostInputSchema.parse(await req.json());
+  const updated = await updateBlogPost(id, input);
+  if (!updated) return notFound("Blog post");
+  return ok(updated);
+});
 
-export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withErrorHandling(async (_req: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
-  const items = readCollection<Record<string, unknown>>(COL);
-  const idx = items.findIndex((b) => b.id === id);
-  if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  items[idx] = { ...items[idx], isDeleted: true, updatedAt: now() };
-  writeCollection(COL, items);
-  return NextResponse.json({ success: true });
-}
+  const deleted = await softDeleteBlogPost(id);
+  if (!deleted) return notFound("Blog post");
+  return noContent();
+});

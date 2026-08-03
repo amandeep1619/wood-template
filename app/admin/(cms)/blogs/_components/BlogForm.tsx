@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 type Category = { id: string; name: string };
+type TeamMember = { id: string; name: string; role: string };
 
 const input = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500";
 const textarea = `${input} resize-y`;
@@ -21,12 +22,13 @@ export default function BlogForm({ blogId }: { blogId?: string }) {
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [slugLocked, setSlugLocked] = useState(isEdit);
 
   const [form, setForm] = useState({
     title: "", slug: "", excerpt: "", content: "",
     categoryId: "", coverImage: "", tags: "",
-    readTime: 5, authorName: "", authorRole: "", authorAvatar: "",
+    readTime: 5, authorId: "",
     featured: false, status: "draft",
     publishedAt: new Date().toISOString().split("T")[0],
   });
@@ -35,6 +37,9 @@ export default function BlogForm({ blogId }: { blogId?: string }) {
     fetch("/api/admin/categories/blogs")
       .then((r) => r.json())
       .then((d) => setCategories(d.data ?? []));
+    fetch("/api/admin/team")
+      .then((r) => r.json())
+      .then((d) => setTeam(d.data ?? []));
   }, []);
 
   useEffect(() => {
@@ -53,9 +58,7 @@ export default function BlogForm({ blogId }: { blogId?: string }) {
           coverImage: String(b.coverImage ?? ""),
           tags: Array.isArray(b.tags) ? (b.tags as string[]).join(", ") : String(b.tags ?? ""),
           readTime: Number(b.readTime ?? 5),
-          authorName: String(b.authorName ?? ""),
-          authorRole: String(b.authorRole ?? ""),
-          authorAvatar: String(b.authorAvatar ?? ""),
+          authorId: String(b.authorId ?? ""),
           featured: Boolean(b.featured),
           status: String(b.status ?? "draft"),
           publishedAt: b.publishedAt ? String(b.publishedAt).split("T")[0] : new Date().toISOString().split("T")[0],
@@ -177,15 +180,12 @@ export default function BlogForm({ blogId }: { blogId?: string }) {
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Author & Media</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Author Name</label>
-              <input type="text" value={form.authorName} onChange={(e) => set("authorName", e.target.value)} className={input} placeholder="Tirath Singh" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Author Role</label>
-              <input type="text" value={form.authorRole} onChange={(e) => set("authorRole", e.target.value)} className={input} placeholder="Master Craftsman & Founder" />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Author</label>
+            <select value={form.authorId} onChange={(e) => set("authorId", e.target.value)} className={select}>
+              <option value="">Select author</option>
+              {team.map((t) => <option key={t.id} value={t.id}>{t.name} — {t.role}</option>)}
+            </select>
           </div>
 
           <div>

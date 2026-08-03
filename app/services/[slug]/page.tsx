@@ -14,7 +14,8 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export async function generateStaticParams() {
-  return getServices().map((s) => ({ slug: s.slug }));
+  const services = await getServices();
+  return services.map((s) => ({ slug: s.slug }));
 }
 
 export async function generateMetadata({
@@ -23,7 +24,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const service = getServiceBySlug(slug);
+  const service = await getServiceBySlug(slug);
   if (!service) return { title: "Service Not Found" };
   return {
     title: service.title,
@@ -60,11 +61,10 @@ export default async function ServiceDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const service = getServiceBySlug(slug);
+  const service = await getServiceBySlug(slug);
   if (!service) notFound();
 
-  const allProjects = getProjects();
-  const allServices = getServices();
+  const [allProjects, allServices] = await Promise.all([getProjects(), getServices()]);
   const Icon = iconMap[service.icon] ?? Armchair;
   const relatedProjects = allProjects.filter((p) => p.serviceSlug === service.slug).slice(0, 3);
   const otherServices = allServices.filter((s) => s.slug !== service.slug).slice(0, 3);

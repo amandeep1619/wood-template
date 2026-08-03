@@ -11,7 +11,8 @@ import ScrollReveal, { StaggerContainer, StaggerItem } from "@/components/animat
 import ImageGallery from "@/components/ui/ImageGallery";
 
 export async function generateStaticParams() {
-  return getProjects().map((p) => ({ slug: p.slug }));
+  const projects = await getProjects();
+  return projects.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
@@ -20,7 +21,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await getProjectBySlug(slug);
   if (!project) return { title: "Project Not Found" };
   return {
     title: project.title,
@@ -66,10 +67,10 @@ export default async function ProjectDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await getProjectBySlug(slug);
   if (!project) notFound();
 
-  const allProjects = getProjects();
+  const allProjects = await getProjects();
   const related = allProjects.filter((p) => p.id !== project.id && p.category === project.category).slice(0, 3);
 
   return (

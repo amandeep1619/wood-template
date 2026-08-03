@@ -4,7 +4,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 import { FAQ } from "@/types";
-import { generalFAQs } from "@/lib/data/faqs";
 import ScrollReveal, { StaggerContainer, StaggerItem } from "@/components/animations/ScrollReveal";
 
 interface FAQItemProps {
@@ -48,13 +47,13 @@ function FAQItem({ faq, isOpen, onToggle }: FAQItemProps) {
 }
 
 interface FAQSectionProps {
-  faqs?: FAQ[];
+  faqs: FAQ[];
   title?: string;
   subtitle?: string;
 }
 
 export default function FAQSection({
-  faqs = generalFAQs,
+  faqs,
   title = "Questions & Answers",
   subtitle = "Everything you need to know before starting your project.",
 }: FAQSectionProps) {

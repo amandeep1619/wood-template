@@ -3,10 +3,8 @@ import { getServices, getProjects, getBlogPosts } from "@/lib/api/publicData";
 
 const BASE_URL = "https://www.tirath-wood-works.com";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const services = getServices();
-  const projects = getProjects();
-  const blogPosts = getBlogPosts();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [services, projects, blogPosts] = await Promise.all([getServices(), getProjects(), getBlogPosts()]);
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
     { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },

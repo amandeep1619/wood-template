@@ -1,34 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db/mongodb";
+import { NextRequest } from "next/server";
+import { getRepo } from "@/lib/db/data-source";
+import { Setting } from "@/lib/db/entities/Setting.entity";
+import { settingsInputSchema } from "@/lib/api/schemas";
+import { ok, withErrorHandling } from "@/lib/api/http";
 
-const COL = "settings";
+export const GET = withErrorHandling(async () => {
+  const repo = await getRepo<Setting>("settings");
+  const rows = await repo.find();
+  const settings: Record<string, unknown> = {};
+  for (const row of rows) settings[row.key] = row.value;
+  return ok(settings);
+});
 
-export async function GET() {
-  try {
-    const db = await getDb();
-    const docs = await db.collection(COL).find({}).toArray();
-    const settings: Record<string, unknown> = {};
-    for (const doc of docs) settings[doc.key] = doc.value;
-    return NextResponse.json({ data: settings });
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
-}
-
-export async function PUT(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const db = await getDb();
-    const now = new Date();
-    for (const [key, value] of Object.entries(body)) {
-      await db.collection(COL).updateOne(
-        { key },
-        { $set: { key, value, updatedAt: now } },
-        { upsert: true }
-      );
-    }
-    return NextResponse.json({ success: true });
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
-}
+export const PUT = withErrorHandling(async (req: NextRequest) => {
+  const body = settingsInputSchema.parse(await req.json());
+  const repo = await getRepo<Setting>("settings");
+  const rows: Pick<Setting, "key" | "value">[] = Object.entries(body).map(([key, value]) => ({ key, value }));
+  if (rows.length > 0) await repo.upsert(rows, ["key"]);
+  return ok({ success: true });
+});

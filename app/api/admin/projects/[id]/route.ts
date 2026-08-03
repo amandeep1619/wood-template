@@ -1,33 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
-import { readCollection, writeCollection, now } from "@/lib/api/mockDb";
+import { NextRequest } from "next/server";
+import { getProject, softDeleteProject, updateProject } from "@/lib/api/projectsService";
+import { projectInputSchema } from "@/lib/api/schemas";
+import { noContent, notFound, ok, withErrorHandling } from "@/lib/api/http";
 
-const COL = "projects";
+type RouteParams = { params: Promise<{ id: string }> };
 
-export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withErrorHandling(async (_req: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
-  const items = readCollection<Record<string, unknown>>(COL);
-  const item = items.find((p) => p.id === id && !p.isDeleted);
-  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ data: item });
-}
+  const item = await getProject(id);
+  if (!item) return notFound("Project");
+  return ok(item);
+});
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PUT = withErrorHandling(async (req: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
-  const body = await req.json();
-  const items = readCollection<Record<string, unknown>>(COL);
-  const idx = items.findIndex((p) => p.id === id && !p.isDeleted);
-  if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  items[idx] = { ...items[idx], ...body, id, updatedAt: now() };
-  writeCollection(COL, items);
-  return NextResponse.json({ data: items[idx] });
-}
+  const input = projectInputSchema.parse(await req.json());
+  const updated = await updateProject(id, input);
+  if (!updated) return notFound("Project");
+  return ok(updated);
+});
 
-export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withErrorHandling(async (_req: NextRequest, { params }: RouteParams) => {
   const { id } = await params;
-  const items = readCollection<Record<string, unknown>>(COL);
-  const idx = items.findIndex((p) => p.id === id);
-  if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  items[idx] = { ...items[idx], isDeleted: true, updatedAt: now() };
-  writeCollection(COL, items);
-  return NextResponse.json({ success: true });
-}
+  const deleted = await softDeleteProject(id);
+  if (!deleted) return notFound("Project");
+  return noContent();
+});

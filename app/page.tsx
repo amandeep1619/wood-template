@@ -7,7 +7,6 @@ import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import FeaturedProjects from "@/components/sections/FeaturedProjects";
 import ProcessTimeline from "@/components/sections/ProcessTimeline";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
-import FAQSection from "@/components/sections/FAQSection";
 import CTABanner from "@/components/sections/CTABanner";
 import { getProjects } from "@/lib/api/publicData";
 
@@ -37,8 +36,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
-  const projects = getProjects();
+export default async function HomePage() {
+  const projects = await getProjects();
   return (
     <>
       <HeroSection />
@@ -49,7 +48,6 @@ export default function HomePage() {
       <FeaturedProjects projects={projects} />
       <ProcessTimeline />
       <TestimonialsSection />
-      <FAQSection />
       <CTABanner />
     </>
   );

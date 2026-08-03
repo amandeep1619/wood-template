@@ -1,27 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db/mongodb";
+import { NextRequest } from "next/server";
+import { createTeamMember, listTeamMembers } from "@/lib/api/teamService";
+import { teamMemberInputSchema } from "@/lib/api/schemas";
+import { ok, okList, withErrorHandling } from "@/lib/api/http";
 
-const COL = "team";
+export const GET = withErrorHandling(async () => {
+  return okList(await listTeamMembers());
+});
 
-export async function GET() {
-  try {
-    const db = await getDb();
-    const docs = await db.collection(COL).find({}).sort({ sortOrder: 1 }).toArray();
-    return NextResponse.json({ data: docs });
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const db = await getDb();
-    const now = new Date();
-    const doc = { ...body, createdAt: now, updatedAt: now };
-    const result = await db.collection(COL).insertOne(doc);
-    return NextResponse.json({ data: { _id: result.insertedId, ...doc } }, { status: 201 });
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
-}
+export const POST = withErrorHandling(async (req: NextRequest) => {
+  const input = teamMemberInputSchema.parse(await req.json());
+  const created = await createTeamMember(input);
+  return ok(created, 201);
+});

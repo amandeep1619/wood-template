@@ -9,7 +9,8 @@ import CTABanner from "@/components/sections/CTABanner";
 import ScrollReveal from "@/components/animations/ScrollReveal";
 
 export async function generateStaticParams() {
-  return getBlogPosts().map((p) => ({ slug: p.slug }));
+  const posts = await getBlogPosts();
+  return posts.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
@@ -18,7 +19,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = await getBlogPostBySlug(slug);
   if (!post) return { title: "Article Not Found" };
   return {
     title: post.title,
@@ -58,10 +59,10 @@ export default async function BlogDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = await getBlogPostBySlug(slug);
   if (!post) notFound();
 
-  const allPosts = getBlogPosts();
+  const allPosts = await getBlogPosts();
   const related = allPosts.filter((p) => p.id !== post.id && p.category === post.category).slice(0, 3);
   const otherPosts = related.length > 0 ? related : allPosts.filter((p) => p.id !== post.id).slice(0, 3);
 

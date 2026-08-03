@@ -30,8 +30,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ServicesPage() {
-  const services = getServices();
+export default async function ServicesPage() {
+  const services = await getServices();
   return (
     <>
       {/* Hero */}

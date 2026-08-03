@@ -1,29 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { signToken, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/api/auth";
+import { authenticateAdmin } from "@/lib/api/authService";
+import { fail, withErrorHandling } from "@/lib/api/http";
 
-export async function POST(req: NextRequest) {
-  try {
-    const { email, password } = await req.json();
+const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1) });
 
-    const expectedEmail = process.env.ADMIN_EMAIL || "admin@tirath-wood-works.com";
-    const expectedPassword = process.env.ADMIN_PASSWORD || "admin123";
+export const POST = withErrorHandling(async (req: NextRequest) => {
+  const { email, password } = loginSchema.parse(await req.json());
 
-    if (email !== expectedEmail || password !== expectedPassword) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-    }
+  const user = await authenticateAdmin(email, password);
+  if (!user) return fail(401, "Invalid credentials");
 
-    const token = signToken({ email, role: "admin", iat: Math.floor(Date.now() / 1000) });
+  const token = signToken({
+    sub: user.id,
+    email: user.email,
+    role: user.role.key,
+    iat: Math.floor(Date.now() / 1000),
+  });
 
-    const res = NextResponse.json({ success: true });
-    res.cookies.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      sameSite: "strict",
-      maxAge: SESSION_MAX_AGE,
-      path: "/",
-      secure: process.env.NODE_ENV === "production",
-    });
-    return res;
-  } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-}
+  const res = NextResponse.json({ success: true });
+  res.cookies.set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "strict",
+    maxAge: SESSION_MAX_AGE,
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+  });
+  return res;
+});

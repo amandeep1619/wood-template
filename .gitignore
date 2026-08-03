@@ -20,6 +20,9 @@
 # production
 /build
 
+# compiled TypeORM output (see tsconfig.migrations.json)
+/dist-db
+
 # misc
 .DS_Store
 *.pem

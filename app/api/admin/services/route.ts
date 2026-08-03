@@ -1,33 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { readCollection, writeCollection, newId, newUUID, now } from "@/lib/api/mockDb";
+import { NextRequest } from "next/server";
+import { createService, listServices } from "@/lib/api/servicesService";
+import { serviceInputSchema } from "@/lib/api/schemas";
+import { ok, okList, withErrorHandling } from "@/lib/api/http";
 
-const COL = "services";
-
-export async function GET(req: NextRequest) {
+export const GET = withErrorHandling(async (req: NextRequest) => {
   const { searchParams } = req.nextUrl;
-  const status = searchParams.get("status");
-  const q = searchParams.get("q")?.toLowerCase();
+  const items = await listServices({
+    status: searchParams.get("status") ?? undefined,
+    categoryId: searchParams.get("categoryId") ?? undefined,
+    q: searchParams.get("q") ?? undefined,
+  });
+  return okList(items);
+});
 
-  let items = readCollection<Record<string, unknown>>(COL).filter((s) => !s.isDeleted);
-  if (status) items = items.filter((s) => s.status === status);
-  if (q) items = items.filter((s) => String(s.title).toLowerCase().includes(q));
-
-  return NextResponse.json({ data: items, total: items.length });
-}
-
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const items = readCollection<Record<string, unknown>>(COL);
-  const ts = now();
-  const item = {
-    ...body,
-    id: newId("svc"),
-    uuid: newUUID(),
-    isDeleted: false,
-    createdAt: ts,
-    updatedAt: ts,
-  };
-  items.push(item);
-  writeCollection(COL, items);
-  return NextResponse.json({ data: item }, { status: 201 });
-}
+export const POST = withErrorHandling(async (req: NextRequest) => {
+  const input = serviceInputSchema.parse(await req.json());
+  const created = await createService(input);
+  return ok(created, 201);
+});

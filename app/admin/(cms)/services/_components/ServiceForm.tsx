@@ -4,6 +4,8 @@ import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+type Category = { id: string; name: string };
+
 const input = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500";
 const textarea = `${input} resize-y`;
 const select = `${input} bg-white`;
@@ -18,12 +20,19 @@ export default function ServiceForm({ serviceId }: { serviceId?: string }) {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [slugLocked, setSlugLocked] = useState(isEdit);
 
   const [form, setForm] = useState({
-    title: "", slug: "", shortDescription: "", description: "",
+    title: "", slug: "", shortDescription: "", description: "", categoryId: "",
     icon: "", image: "", featured: false, status: "active",
   });
+
+  useEffect(() => {
+    fetch("/api/admin/categories/services")
+      .then((r) => r.json())
+      .then((d) => setCategories(d.data ?? []));
+  }, []);
 
   useEffect(() => {
     if (!serviceId) return;
@@ -37,6 +46,7 @@ export default function ServiceForm({ serviceId }: { serviceId?: string }) {
           slug: String(s.slug ?? ""),
           shortDescription: String(s.shortDescription ?? ""),
           description: String(s.description ?? ""),
+          categoryId: String(s.categoryId ?? ""),
           icon: String(s.icon ?? ""),
           image: String(s.image ?? ""),
           featured: Boolean(s.featured),
@@ -110,6 +120,13 @@ export default function ServiceForm({ serviceId }: { serviceId?: string }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+              <select value={form.categoryId} onChange={(e) => set("categoryId", e.target.value)} className={select}>
+                <option value="">Select category</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
               <select value={form.status} onChange={(e) => set("status", e.target.value)} className={select}>

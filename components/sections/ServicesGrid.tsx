@@ -4,8 +4,8 @@ import { getServices } from "@/lib/api/publicData";
 import ServiceCard from "@/components/cards/ServiceCard";
 import ScrollReveal, { StaggerContainer, StaggerItem } from "@/components/animations/ScrollReveal";
 
-export default function ServicesGrid() {
-  const services = getServices();
+export default async function ServicesGrid() {
+  const services = await getServices();
   return (
     <section className="section-padding bg-white">
       <div className="container-wide">
