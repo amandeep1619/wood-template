@@ -72,9 +72,9 @@ export default function BlogPage() {
           <ScrollReveal className="mb-10">
             <h2 className="font-serif text-3xl font-bold text-dark-wood">Featured Articles</h2>
           </ScrollReveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-stretch">
             {featured.map((post, i) => (
-              <ScrollReveal key={post.id} delay={i * 0.1}>
+              <ScrollReveal key={post.id} delay={i * 0.1} className="h-full">
                 <BlogCard post={post} />
               </ScrollReveal>
             ))}
@@ -86,11 +86,11 @@ export default function BlogPage() {
                 <h2 className="font-serif text-3xl font-bold text-dark-wood">All Articles</h2>
               </ScrollReveal>
               <StaggerContainer
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch"
                 staggerDelay={0.08}
               >
                 {rest.map((post) => (
-                  <StaggerItem key={post.id}>
+                  <StaggerItem key={post.id} className="h-full">
                     <BlogCard post={post} />
                   </StaggerItem>
                 ))}

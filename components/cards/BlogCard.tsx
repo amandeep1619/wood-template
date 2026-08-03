@@ -51,7 +51,7 @@ export default function BlogCard({ post, variant = "default" }: BlogCardProps) {
     <motion.article
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-      className="group bg-white rounded-xl overflow-hidden border border-wood-200/50 hover:shadow-lg hover:shadow-walnut/10 transition-shadow duration-300"
+      className="group h-full flex flex-col bg-white rounded-xl overflow-hidden border border-wood-200/50 hover:shadow-lg hover:shadow-walnut/10 transition-shadow duration-300"
     >
       <Link href={`/blog/${post.slug}`} className="block">
         <div className="relative h-52 overflow-hidden">
@@ -69,7 +69,7 @@ export default function BlogCard({ post, variant = "default" }: BlogCardProps) {
           </div>
         </div>
       </Link>
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-1">
         <div className="flex items-center gap-3 mb-3">
           <div className="relative w-8 h-8 rounded-full overflow-hidden">
             <Image src={post.author.avatar} alt={post.author.name} fill className="object-cover" sizes="32px" />
@@ -83,7 +83,7 @@ export default function BlogCard({ post, variant = "default" }: BlogCardProps) {
             {post.readTime} min
           </div>
         </div>
-        <h3 className="font-serif text-lg font-semibold text-dark-wood mb-2 leading-snug group-hover:text-walnut transition-colors">
+        <h3 className="font-serif text-lg font-semibold text-dark-wood mb-2 leading-snug line-clamp-2 group-hover:text-walnut transition-colors">
           <Link href={`/blog/${post.slug}`}>{post.title}</Link>
         </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2">
@@ -91,7 +91,7 @@ export default function BlogCard({ post, variant = "default" }: BlogCardProps) {
         </p>
         <Link
           href={`/blog/${post.slug}`}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-walnut hover:text-dark-wood transition-colors group/link"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-walnut hover:text-dark-wood transition-colors group/link mt-auto"
         >
           Read Article
           <ArrowRight size={12} className="transition-transform group-hover/link:translate-x-1" />

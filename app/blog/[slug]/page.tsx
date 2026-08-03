@@ -187,9 +187,9 @@ export default async function BlogDetailPage({
                 All Articles <ArrowRight size={13} />
               </Link>
             </ScrollReveal>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
               {otherPosts.map((p, i) => (
-                <ScrollReveal key={p.id} delay={i * 0.1}><BlogCard post={p} /></ScrollReveal>
+                <ScrollReveal key={p.id} delay={i * 0.1} className="h-full"><BlogCard post={p} /></ScrollReveal>
               ))}
             </div>
           </div>
