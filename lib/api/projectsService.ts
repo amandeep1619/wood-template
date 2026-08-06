@@ -1,17 +1,16 @@
-import { FindOptionsWhere, ILike } from "typeorm";
-import { getRepo } from "@/lib/db/data-source";
-import { Project } from "@/lib/db/entities/Project.entity";
-import { ProjectImage } from "@/lib/db/entities/ProjectImage.entity";
-import { ProjectCategory } from "@/lib/db/entities/ProjectCategory.entity";
-import { Service } from "@/lib/db/entities/Service.entity";
+import { getMongoose } from "@/lib/db/mongoose";
+import { Project } from "@/lib/db/models/Project.model";
+import { ProjectCategory } from "@/lib/db/models/ProjectCategory.model";
+import { Service } from "@/lib/db/models/Service.model";
 import { ApiError } from "@/lib/api/http";
 import type { ProjectInput } from "@/lib/api/schemas";
 
 export type ProjectFilters = { status?: string; categoryId?: string; q?: string };
 
-const RELATIONS = { category: true, service: true, gallery: true };
+const RELATIONS = ["category", "service"];
 
-function serialize(project: Project) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- populated Mongoose document
+function serialize(project: any) {
   return {
     id: project.id,
     slug: project.slug,
@@ -39,74 +38,71 @@ function serialize(project: Project) {
 }
 
 export async function listProjects(filters: ProjectFilters) {
-  const repo = await getRepo<Project>("projects");
-  const where: FindOptionsWhere<Project> = {};
-  if (filters.status) where.status = filters.status as Project["status"];
-  if (filters.categoryId) where.category = { id: filters.categoryId };
-  if (filters.q) where.title = ILike(`%${filters.q}%`);
-  const items = await repo.find({ where, relations: RELATIONS, order: { createdAt: "DESC" } });
+  await getMongoose();
+  const where: Record<string, unknown> = {};
+  if (filters.status) where.status = filters.status;
+  if (filters.categoryId) where.category = filters.categoryId;
+  if (filters.q) where.title = { $regex: filters.q, $options: "i" };
+  const items = await Project.find(where).populate(RELATIONS).sort({ createdAt: -1 });
   return items.map(serialize);
 }
 
 export async function getProject(id: string) {
-  const repo = await getRepo<Project>("projects");
-  const item = await repo.findOne({ where: { id }, relations: RELATIONS });
+  await getMongoose();
+  const item = await Project.findById(id).populate(RELATIONS);
   return item ? serialize(item) : null;
 }
 
 async function resolveRelations(input: ProjectInput) {
-  const category = await (await getRepo<ProjectCategory>("project_categories")).findOne({ where: { id: input.categoryId } });
+  const category = await ProjectCategory.findById(input.categoryId);
   if (!category) throw new ApiError(400, "categoryId does not reference an existing category");
-  let service: Service | null = null;
+  let service = null;
   if (input.serviceId) {
-    service = await (await getRepo<Service>("services")).findOne({ where: { id: input.serviceId } });
+    service = await Service.findById(input.serviceId);
     if (!service) throw new ApiError(400, "serviceId does not reference an existing service");
   }
   return { category, service };
 }
 
 export async function createProject(input: ProjectInput) {
-  // categoryId/serviceId are pulled off so ...rest can be spread onto the
-  // entity without them (the entity holds real relations, not id columns).
+  await getMongoose();
+  // categoryId/serviceId/gallery are pulled off so ...rest can be spread
+  // without them (the document holds resolved refs and mapped subdocuments).
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { categoryId, serviceId, gallery, ...rest } = input;
   const { category, service } = await resolveRelations(input);
-  const repo = await getRepo<Project>("projects");
-  const project = repo.create({
+  const created = await Project.create({
     ...rest,
-    category,
-    service,
-    gallery: gallery.map((url, sortOrder) => Object.assign(new ProjectImage(), { url, sortOrder })),
+    category: category.id,
+    service: service?.id ?? null,
+    gallery: gallery.map((url, sortOrder) => ({ url, sortOrder })),
   });
-  const saved = await repo.save(project);
-  return getProject(saved.id);
+  return getProject(created.id);
 }
 
 export async function updateProject(id: string, input: ProjectInput) {
-  const repo = await getRepo<Project>("projects");
-  const existing = await repo.findOne({ where: { id }, relations: { gallery: true } });
+  await getMongoose();
+  const existing = await Project.findById(id);
   if (!existing) return null;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { categoryId, serviceId, gallery, ...rest } = input;
   const { category, service } = await resolveRelations(input);
-  if (existing.gallery?.length) {
-    await (await getRepo<ProjectImage>("project_images")).remove(existing.gallery);
-  }
   Object.assign(existing, {
     ...rest,
-    category,
-    service,
-    gallery: gallery.map((url, sortOrder) => Object.assign(new ProjectImage(), { url, sortOrder })),
+    category: category.id,
+    service: service?.id ?? null,
+    gallery: gallery.map((url, sortOrder) => ({ url, sortOrder })),
   });
-  const saved = await repo.save(existing);
+  const saved = await existing.save();
   return getProject(saved.id);
 }
 
 export async function softDeleteProject(id: string) {
-  const repo = await getRepo<Project>("projects");
-  const existing = await repo.findOne({ where: { id } });
+  await getMongoose();
+  const existing = await Project.findById(id);
   if (!existing) return false;
-  await repo.softDelete(id);
+  existing.set("deletedAt", new Date());
+  await existing.save();
   return true;
 }

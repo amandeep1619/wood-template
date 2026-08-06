@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** Mongo ObjectId, as a 24-char hex string — replaces the old Postgres uuid check. */
+const objectId = () => z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid id");
+
 export const categoryInputSchema = z.object({
   slug: z.string().min(1).max(160),
   name: z.string().min(1).max(160),
@@ -13,8 +16,8 @@ const statusEnum = z.enum(["draft", "published", "archived"]);
 
 export const projectInputSchema = z.object({
   slug: z.string().min(1).max(200),
-  categoryId: z.string().uuid(),
-  serviceId: z.string().uuid().nullable().optional(),
+  categoryId: objectId(),
+  serviceId: objectId().nullable().optional(),
   title: z.string().min(1).max(200),
   shortDescription: z.string().max(500).default(""),
   description: z.string().default(""),
@@ -37,7 +40,7 @@ const serviceStatusEnum = z.enum(["active", "inactive"]);
 
 export const serviceInputSchema = z.object({
   slug: z.string().min(1).max(200),
-  categoryId: z.string().uuid(),
+  categoryId: objectId(),
   title: z.string().min(1).max(200),
   shortDescription: z.string().max(500).default(""),
   description: z.string().default(""),
@@ -53,8 +56,8 @@ export type ServiceInput = z.infer<typeof serviceInputSchema>;
 
 export const blogPostInputSchema = z.object({
   slug: z.string().min(1).max(200),
-  categoryId: z.string().uuid(),
-  authorId: z.string().uuid(),
+  categoryId: objectId(),
+  authorId: objectId(),
   title: z.string().min(1).max(200),
   excerpt: z.string().max(500).default(""),
   content: z.string().default(""),
@@ -89,7 +92,7 @@ export const testimonialInputSchema = z.object({
   avatar: z.string().max(500).default(""),
   rating: z.coerce.number().int().min(1).max(5),
   text: z.string().min(1),
-  projectId: z.string().uuid().nullable().optional(),
+  projectId: objectId().nullable().optional(),
   featured: z.boolean().optional(),
   isPublished: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
@@ -97,7 +100,7 @@ export const testimonialInputSchema = z.object({
 export type TestimonialInput = z.infer<typeof testimonialInputSchema>;
 
 export const faqInputSchema = z.object({
-  serviceId: z.string().uuid().nullable().optional(),
+  serviceId: objectId().nullable().optional(),
   topic: z.string().max(80).nullable().optional(),
   question: z.string().min(1).max(300),
   answer: z.string().min(1),

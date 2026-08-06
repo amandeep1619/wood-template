@@ -1,21 +1,21 @@
-import { FindOptionsWhere, ILike, In } from "typeorm";
-import { getRepo } from "@/lib/db/data-source";
-import { BlogPost } from "@/lib/db/entities/BlogPost.entity";
-import { BlogCategory } from "@/lib/db/entities/BlogCategory.entity";
-import { TeamMember } from "@/lib/db/entities/TeamMember.entity";
-import { Tag } from "@/lib/db/entities/Tag.entity";
+import { getMongoose } from "@/lib/db/mongoose";
+import { BlogPost } from "@/lib/db/models/BlogPost.model";
+import { BlogCategory } from "@/lib/db/models/BlogCategory.model";
+import { TeamMember } from "@/lib/db/models/TeamMember.model";
+import { Tag } from "@/lib/db/models/Tag.model";
 import { ApiError } from "@/lib/api/http";
 import type { BlogPostInput } from "@/lib/api/schemas";
 
 export type BlogPostFilters = { status?: string; categoryId?: string; q?: string };
 
-const RELATIONS = { category: true, author: true, tags: true };
+const RELATIONS = ["category", "author", "tags"];
 
 function slugifyTag(name: string) {
   return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function serialize(post: BlogPost) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- populated Mongoose document
+function serialize(post: any) {
   return {
     id: post.id,
     slug: post.slug,
@@ -29,7 +29,8 @@ function serialize(post: BlogPost) {
     content: post.content,
     coverImage: post.coverImage,
     readTime: post.readTime,
-    tags: (post.tags ?? []).map((t) => t.name),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- populated Tag document
+    tags: (post.tags ?? []).map((t: any) => t.name),
     featured: post.featured,
     status: post.status,
     publishedAt: post.publishedAt,
@@ -39,18 +40,18 @@ function serialize(post: BlogPost) {
 }
 
 export async function listBlogPosts(filters: BlogPostFilters) {
-  const repo = await getRepo<BlogPost>("blog_posts");
-  const where: FindOptionsWhere<BlogPost> = {};
-  if (filters.status) where.status = filters.status as BlogPost["status"];
-  if (filters.categoryId) where.category = { id: filters.categoryId };
-  if (filters.q) where.title = ILike(`%${filters.q}%`);
-  const items = await repo.find({ where, relations: RELATIONS, order: { createdAt: "DESC" } });
+  await getMongoose();
+  const where: Record<string, unknown> = {};
+  if (filters.status) where.status = filters.status;
+  if (filters.categoryId) where.category = filters.categoryId;
+  if (filters.q) where.title = { $regex: filters.q, $options: "i" };
+  const items = await BlogPost.find(where).populate(RELATIONS).sort({ createdAt: -1 });
   return items.map(serialize);
 }
 
 export async function getBlogPost(id: string) {
-  const repo = await getRepo<BlogPost>("blog_posts");
-  const item = await repo.findOne({ where: { id }, relations: RELATIONS });
+  await getMongoose();
+  const item = await BlogPost.findById(id).populate(RELATIONS);
   return item ? serialize(item) : null;
 }
 
@@ -59,52 +60,64 @@ async function resolveTags(names: string[]) {
   const cleaned = [...new Set(names.map((n) => n.trim()).filter(Boolean))];
   if (cleaned.length === 0) return [];
 
-  const tagRepo = await getRepo<Tag>("tags");
-  const existing = await tagRepo.find({ where: { name: In(cleaned) } });
+  const existing = await Tag.find({ name: { $in: cleaned } });
   const existingNames = new Set(existing.map((t) => t.name.toLowerCase()));
   const missing = cleaned.filter((n) => !existingNames.has(n.toLowerCase()));
 
-  const created = await tagRepo.save(missing.map((name) => tagRepo.create({ name, slug: slugifyTag(name) })));
+  const created = missing.length
+    ? await Tag.create(missing.map((name) => ({ name, slug: slugifyTag(name) })))
+    : [];
   return [...existing, ...created];
 }
 
 async function resolveRelations(input: BlogPostInput) {
-  const category = await (await getRepo<BlogCategory>("blog_categories")).findOne({ where: { id: input.categoryId } });
+  const category = await BlogCategory.findById(input.categoryId);
   if (!category) throw new ApiError(400, "categoryId does not reference an existing category");
-  const author = await (await getRepo<TeamMember>("team_members")).findOne({ where: { id: input.authorId } });
+  const author = await TeamMember.findById(input.authorId);
   if (!author) throw new ApiError(400, "authorId does not reference an existing team member");
   const tags = await resolveTags(input.tags);
   return { category, author, tags };
 }
 
 export async function createBlogPost(input: BlogPostInput) {
-  // categoryId/authorId/tags are pulled off so ...rest can be spread onto
-  // the entity without them (the entity holds real relations, not raw ids/names).
+  await getMongoose();
+  // categoryId/authorId/tags are pulled off so ...rest can be spread without
+  // them (the document holds resolved refs, not raw ids/names).
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { categoryId, authorId, tags: tagNames, ...rest } = input;
   const { category, author, tags } = await resolveRelations(input);
-  const repo = await getRepo<BlogPost>("blog_posts");
-  const saved = await repo.save(repo.create({ ...rest, category, author, tags }));
-  return getBlogPost(saved.id);
+  const created = await BlogPost.create({
+    ...rest,
+    category: category.id,
+    author: author.id,
+    tags: tags.map((t) => t.id),
+  });
+  return getBlogPost(created.id);
 }
 
 export async function updateBlogPost(id: string, input: BlogPostInput) {
-  const repo = await getRepo<BlogPost>("blog_posts");
-  const existing = await repo.findOne({ where: { id } });
+  await getMongoose();
+  const existing = await BlogPost.findById(id);
   if (!existing) return null;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { categoryId, authorId, tags: tagNames, ...rest } = input;
   const { category, author, tags } = await resolveRelations(input);
-  Object.assign(existing, { ...rest, category, author, tags });
-  const saved = await repo.save(existing);
+  Object.assign(existing, {
+    ...rest,
+    category: category.id,
+    author: author.id,
+    tags: tags.map((t) => t.id),
+  });
+  const saved = await existing.save();
   return getBlogPost(saved.id);
 }
 
 export async function softDeleteBlogPost(id: string) {
-  const repo = await getRepo<BlogPost>("blog_posts");
-  const existing = await repo.findOne({ where: { id } });
+  await getMongoose();
+  const existing = await BlogPost.findById(id);
   if (!existing) return false;
-  await repo.softDelete(id);
+  existing.set("deletedAt", new Date());
+  await existing.save();
   return true;
 }

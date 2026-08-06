@@ -1,36 +1,35 @@
-import { getRepo } from "@/lib/db/data-source";
-import { TeamMember } from "@/lib/db/entities/TeamMember.entity";
+import { getMongoose } from "@/lib/db/mongoose";
+import { TeamMember } from "@/lib/db/models/TeamMember.model";
 import type { TeamMemberInput } from "@/lib/api/schemas";
 
-async function repo() {
-  return getRepo<TeamMember>("team_members");
-}
-
 export async function listTeamMembers() {
-  return (await repo()).find({ order: { sortOrder: "ASC" } });
+  await getMongoose();
+  return TeamMember.find().sort({ sortOrder: 1 });
 }
 
 export async function getTeamMember(id: string) {
-  return (await repo()).findOne({ where: { id } });
+  await getMongoose();
+  return TeamMember.findById(id);
 }
 
 export async function createTeamMember(input: TeamMemberInput) {
-  const r = await repo();
-  return r.save(r.create(input));
+  await getMongoose();
+  return TeamMember.create(input);
 }
 
 export async function updateTeamMember(id: string, input: Partial<TeamMemberInput>) {
-  const r = await repo();
-  const existing = await r.findOne({ where: { id } });
+  await getMongoose();
+  const existing = await TeamMember.findById(id);
   if (!existing) return null;
-  r.merge(existing, input);
-  return r.save(existing);
+  Object.assign(existing, input);
+  return existing.save();
 }
 
 export async function softDeleteTeamMember(id: string) {
-  const r = await repo();
-  const existing = await r.findOne({ where: { id } });
+  await getMongoose();
+  const existing = await TeamMember.findById(id);
   if (!existing) return false;
-  await r.softDelete(id);
+  existing.set("deletedAt", new Date());
+  await existing.save();
   return true;
 }
