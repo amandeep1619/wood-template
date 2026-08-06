@@ -56,7 +56,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
   const handleLogout = async () => {
     await fetch("/api/admin/auth/logout", { method: "POST" });
-    router.push("/admin/login");
+    router.push("/");
   };
 
   const content = (
